@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+  <item
+      android:id="@+id/menu_home"
+      android:enabled="true"
+      android:title="a"
+      app:showAsAction="ifRoom" />
+
+  <item
+      android:id="@+id/menu_audio"
+      android:enabled="true"
+      android:title="b"
+      app:showAsAction="ifRoom" />
+
+  <item
+      android:id="@+id/menu_video"
+      android:enabled="true"
+      android:title="c"
+      app:showAsAction="ifRoom" />
+</menu>

@@ -31,9 +31,9 @@ BluetoothSerial SerialBT;
 
 // #define WiFiOTA false
 
-// #define SerialDebug SerialBT
-#define SerialDebug Serial
-#define blinkEnabled false
+#define SerialDebug SerialBT
+// #define SerialDebug Serial
+#define blinkEnabled true
 
 #define PIN_RX 16
 #define PIN_TX 17
@@ -96,22 +96,26 @@ void loop()
 
     // delay(1000);
 
+    // SerialDebug.println("Test");
+
     // return;
 
-    if (ledOnUntil >= millis())
-    {
-        if (!ledStatus)
+    if (blinkEnabled) {
+        if (ledOnUntil >= millis())
         {
-            digitalWrite(PIN_LED, HIGH);
-            ledStatus = true;
+            if (!ledStatus)
+            {
+                digitalWrite(PIN_LED, HIGH);
+                ledStatus = true;
+            }
         }
-    }
-    else
-    {
-        if (ledStatus)
+        else
         {
-            digitalWrite(PIN_LED, LOW);
-            ledStatus = false;
+            if (ledStatus)
+            {
+                digitalWrite(PIN_LED, LOW);
+                ledStatus = false;
+            }
         }
     }
 
@@ -125,10 +129,7 @@ void loop()
 
         SerialDebug.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
 
-        if (blinkEnabled)
-        {
-            ledOnUntil = millis() + 100;
-        }
+        ledOnUntil = millis() + 100;
 
 
         dataRecv.count++;
@@ -136,14 +137,20 @@ void loop()
         Transceiver.SendStruct(&dataRecv, sizeof(dataRecv));
         Last = millis();
     }
-    else if ((millis() - Last) > 5000)
-    {
-        SerialDebug.println("No response in the last 10 seconds... Sending initial message");
-        DATA dataSend;
-        dataSend.Message = "hello!";
-        dataSend.count = 0;
-        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
 
-        Last = millis();
+    if (SerialDebug.available()) {
+        ledOnUntil = millis() + 200;
+        SerialDebug.println(SerialDebug.read());
     }
+
+    // else if ((millis() - Last) > 5000)
+    // {
+    //     SerialDebug.println("No response in the last 10 seconds... Sending initial message");
+    //     DATA dataSend;
+    //     dataSend.Message = "hello!";
+    //     dataSend.count = 0;
+    //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+
+    //     Last = millis();
+    // }
 }
