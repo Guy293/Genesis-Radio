@@ -15,11 +15,13 @@ namespace GenesisRadioApp
     {
         public string Message { get; }
         public string Time { get; }
+        public bool IsSelfSent { get; }
         public MessageContent() { }
-        public MessageContent(string Message)
+        public MessageContent(string Message, bool IsSelfSent)
         {
             this.Message = Message;
             Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            this.IsSelfSent = IsSelfSent;
         }
     }
 }

@@ -3,12 +3,12 @@ using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Widget;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Java.Lang;
+using Android.Widget;
 
 namespace GenesisRadioApp
 {
@@ -48,6 +48,28 @@ namespace GenesisRadioApp
 
             message_content.Text = messageList[position].Message;
             message_time.Text = messageList[position].Time;
+
+
+            // Align message to left or right
+            LayoutRules lr;
+
+            if (messageList[position].IsSelfSent)
+            {
+                lr = LayoutRules.AlignParentEnd;
+            }
+            else
+            {
+                lr = LayoutRules.AlignParentStart;
+            }
+
+            RelativeLayout.LayoutParams lp_message_content = (RelativeLayout.LayoutParams)message_content.LayoutParameters;
+            RelativeLayout.LayoutParams lp_message_time = (RelativeLayout.LayoutParams)message_time.LayoutParameters;
+
+            lp_message_content.AddRule(lr);
+            lp_message_time.AddRule(lr);
+
+            message_content.LayoutParameters = lp_message_content;
+            message_time.LayoutParameters = lp_message_time;
 
             return ItemView;
         }

@@ -123,7 +123,7 @@ namespace GenesisRadioApp
         {
             foreach (BluetoothDevice d in this.btAdapter.BondedDevices)
             {
-                if (d.Name == "ESP32-Lora")
+                if (d.Name.StartsWith("ESP32-Lora"))
                 {
                     Console.WriteLine("ESP32-Lora Found!");
                     this.btDevice = d;
@@ -148,6 +148,8 @@ namespace GenesisRadioApp
 
         public void SendMessage(string message)
         {
+            activity.InsertMessage(new MessageContent(message, true));
+
             Stream outStream = btSocket.OutputStream;
 
             outStream.Write(Encoding.UTF8.GetBytes(message));
@@ -171,7 +173,7 @@ namespace GenesisRadioApp
                         String packet = buffer.ReadLine();
 
                         activity.RunOnUiThread(() => {
-                            activity.InsertMessage(new MessageContent(packet));
+                            activity.InsertMessage(new MessageContent(packet, false));
                         });
 
                         //Console.WriteLine(packet);

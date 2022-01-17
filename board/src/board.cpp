@@ -48,7 +48,6 @@ BluetoothSerial SerialBT;
 struct DATA
 {
     String Message;
-    int count;
 };
 
 DATA dataSend;
@@ -88,6 +87,7 @@ void setup()
 
     Transceiver.PrintParameters();
 
+    ledOnUntil = millis();
     Last = millis();
 }
 
@@ -127,20 +127,15 @@ void loop()
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
-        SerialDebug.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
+        SerialBT.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
 
         ledOnUntil = millis() + 100;
-
-
-        dataRecv.count++;
-        delay(500);
-        Transceiver.SendStruct(&dataRecv, sizeof(dataRecv));
-        Last = millis();
     }
 
-    if (SerialDebug.available()) {
-        ledOnUntil = millis() + 200;
-        SerialDebug.println(SerialDebug.read());
+    if (SerialBT.available()) {
+        DATA dataSend;
+        dataSend.Message = SerialBT.readString();
+        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
     }
 
     // else if ((millis() - Last) > 5000)
