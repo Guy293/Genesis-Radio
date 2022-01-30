@@ -23,9 +23,10 @@ namespace GenesisRadioApp
     public class MainActivity : AppCompatActivity
     {
         LoraBLService module;
+        LoraBLSerivceConnection loraBLServiceConnection;
         ListView messageListView;
         List<MessageContent> messageList = new List<MessageContent>();
-        MessageViewAdapter adapter;
+        MessageViewAdapter messageListAdapter;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -35,23 +36,57 @@ namespace GenesisRadioApp
 
             messageListView = FindViewById<ListView>(Resource.Id.messages_list);
 
-            adapter = new MessageViewAdapter(this, messageList);
-            messageListView.Adapter = adapter;
-
-            module = new LoraBLService(this);
+            messageListAdapter = new MessageViewAdapter(this, messageList);
+            messageListView.Adapter = messageListAdapter;
 
 
-            EditText input = FindViewById<EditText>(Resource.Id.input);
+            //// Check for bluetooth permissions
+            //if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+            //{
+            //    RequestPermissions(new string[] {
 
-            input.KeyPress += (object sender, View.KeyEventArgs e) => {
-                e.Handled = false;
-                if (e.Event.Action == KeyEventActions.Down && e.KeyCode == Keycode.Enter)
-                {
-                    module.SendMessage(input.Text);
-                    input.Text = "";
-                    e.Handled = true;
-                }
-            };
+            //        Manifest.Permission.Bluetooth,
+            //        Manifest.Permission.BluetoothAdmin,
+            //        Manifest.Permission.BluetoothConnect,
+            //        Manifest.Permission.BluetoothScan,
+            //        Manifest.Permission.AccessBackgroundLocation,
+            //        Manifest.Permission.AccessFineLocation,
+            //    }, REQUEST_ENABLE_BT);
+            //}
+            //else
+            //{
+            //    Intent enableBtIntent = new Intent(BluetoothAdapter.ActionRequestEnable);
+            //    StartActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            //}
+
+            RequestPermissions(new String[] {
+                Manifest.Permission.BluetoothScan,
+                Manifest.Permission.AccessCoarseLocation,
+                Manifest.Permission.AccessFineLocation,
+                Manifest.Permission.AccessBackgroundLocation,
+            }, 1);
+
+            this.loraBLServiceConnection = new LoraBLSerivceConnection(this);
+
+            Intent serviceIntent = new Intent(this, typeof(LoraBLService));
+            BindService(serviceIntent, this.loraBLServiceConnection, Bind.AutoCreate);
+            StartForegroundService(serviceIntent);
+
+            // module = new LoraBLService(this);
+
+
+            //EditText input = FindViewById<EditText>(Resource.Id.input);
+
+            //input.KeyPress += (object sender, View.KeyEventArgs e) =>
+            //{
+            //    e.Handled = false;
+            //    if (e.Event.Action == KeyEventActions.Down && e.KeyCode == Keycode.Enter)
+            //    {
+            //        module.SendMessage(input.Text);
+            //        input.Text = "";
+            //        e.Handled = true;
+            //    }
+            //};
 
 
             //ContactList mContactList = new ContactList();
@@ -77,7 +112,7 @@ namespace GenesisRadioApp
         {
             messageList.Add(message);
 
-            adapter.NotifyDataSetChanged();
+            messageListAdapter.NotifyDataSetChanged();
 
         }
 

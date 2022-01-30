@@ -63,6 +63,8 @@
   <ItemGroup>
     <Compile Include="ContactList.cs" />
     <Compile Include="LoraBLService.cs" />
+    <Compile Include="LoraBLServiceBinder.cs" />
+    <Compile Include="LoraBLServiceConnection.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="MessageContent.cs" />
     <Compile Include="MessageViewAdapter.cs" />
