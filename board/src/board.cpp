@@ -86,16 +86,15 @@ void setup()
     pServer->setCallbacks(new ServerCallbacks());
     BLEService *pService = pServer->createService(SERVICE_UUID);
     // TODO: Using notify for now, but might switch to indicate for confirming message
-    // pNewMessageCharacteristic = pService->createCharacteristic(
-    //                                         NEW_MESSAGE_CHARACTERISTIC_UUID,
-    //                                         BLECharacteristic::PROPERTY_READ |
-    //                                         BLECharacteristic::PROPERTY_NOTIFY
-    //                                     );
     pNewMessageCharacteristic = pService->createCharacteristic(
                                             NEW_MESSAGE_CHARACTERISTIC_UUID,
                                             BLECharacteristic::PROPERTY_READ |
-                                            BLECharacteristic::PROPERTY_WRITE
+                                            BLECharacteristic::PROPERTY_NOTIFY
                                         );
+    // pNewMessageCharacteristic = pService->createCharacteristic(
+    //                                         NEW_MESSAGE_CHARACTERISTIC_UUID,
+    //                                         BLECharacteristic::PROPERTY_READ
+    //                                     );
 
     // TODO: Might remove
     pService->start();
@@ -107,8 +106,6 @@ void setup()
     BLEDevice::startAdvertising();
 
     SerialDebug.println("BLE Initialized");
-
-
 
     pinMode(PIN_LED, OUTPUT);
 
