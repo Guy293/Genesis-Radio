@@ -34,6 +34,7 @@ namespace GenesisRadioApp
     {
         internal static readonly string CHANNEL_ID = "status_notification_channel";
         internal static readonly int NOTIFICATION_ID = 100;
+        static readonly string TAG = typeof(LoraBLService).FullName;
 
         NotificationManager notificationManager;
         Notification.Builder notificationBuilder;
@@ -300,6 +301,8 @@ namespace GenesisRadioApp
 
     public class LeScanCallback : ScanCallback
     {
+        static readonly string TAG = typeof(LeScanCallback).FullName;
+
         LoraBLService m;
 
         public LeScanCallback(LoraBLService m)
