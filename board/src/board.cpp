@@ -66,6 +66,14 @@ EBYTE Transceiver(&Serial2, PIN_M0, PIN_M1, PIN_AUX);
 
 BLECharacteristic *pNewMessageCharacteristic;
 
+
+class ServerCallbacks : public BLEServerCallbacks {
+    void onDisconnect(BLEServer* pServer) {
+        SerialDebug.println("BLE device disconnected");
+        pServer->startAdvertising();
+    }
+};
+
 void setup()
 {
     Serial.begin(9600);
@@ -75,6 +83,7 @@ void setup()
     SerialDebug.println("Initializing BLE");
     BLEDevice::init(BLE_DEVICE_NAME);
     BLEServer *pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new ServerCallbacks());
     BLEService *pService = pServer->createService(SERVICE_UUID);
     // TODO: Using notify for now, but might switch to indicate for confirming message
     // pNewMessageCharacteristic = pService->createCharacteristic(
