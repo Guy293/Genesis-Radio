@@ -32,19 +32,24 @@ namespace GenesisRadioApp
     [Service]
     public class LoraBLService : Service
     {
-        internal static readonly string CHANNEL_ID = "status_notification_channel";
-        internal static readonly int NOTIFICATION_ID = 100;
         static readonly string TAG = typeof(LoraBLService).FullName;
 
-        NotificationManager notificationManager;
-        Notification.Builder notificationBuilder;
+        readonly string CHANNEL_ID = "status_notification_channel";
+        public readonly int NOTIFICATION_ID = 100;
+
+        public NotificationManager notificationManager;
+        public Notification.Builder notificationBuilder;
 
         IBinder binder;
-        public List<(BluetoothDevice device, int rssi)> Devices;
+        readonly string bluetoothServiceUUID = "16f88c52-1471-4bba-95a8-17094b0520d3";
+        readonly string newMessageCharacteristicUUID = "af77d21b-1a5c-4910-b4b4-c98220ac0e79";
+        BluetoothGattCharacteristic newMessageCharacteristic;
+        public List<(BluetoothDevice Device, int Rssi)> Devices;
         BluetoothManager bluetoothManager;
         BluetoothAdapter bluetoothAdapter;
         BluetoothLeScanner bleScanner;
-        BluetoothDevice device;
+        public BluetoothDevice device;
+        public BluetoothGatt bluetoothGatt;
 
         public Intent intent;
 
@@ -62,8 +67,8 @@ namespace GenesisRadioApp
             notificationManager.CreateNotificationChannel(channel);
             var pendingIntent = PendingIntent.GetActivity(this, NOTIFICATION_ID, intent, PendingIntentFlags.Immutable);
             notificationBuilder = new Notification.Builder(this, CHANNEL_ID)
-            .SetContentTitle("Genesis Radio")
-            .SetContentText("Looking for beacon stations...")
+            .SetContentTitle(Resources.GetString(Resource.String.app_name))
+            .SetContentText(Resources.GetString(Resource.String.notification_looking_for_beacon))
             .SetContentIntent(pendingIntent)
             .SetSmallIcon(Resource.Mipmap.ic_launcher)
             .SetOngoing(true);
@@ -71,10 +76,7 @@ namespace GenesisRadioApp
             StartForeground(NOTIFICATION_ID, notificationBuilder.Build());
 
 
-            //notificationBuilder.SetContentText("Found!");
-            //notificationManager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
-
-            Devices = new List<(BluetoothDevice device, int rssi)>();
+            Devices = new List<(BluetoothDevice Device, int Rssi)>();
 
 
             bluetoothManager = (BluetoothManager)Application.Context.GetSystemService(BluetoothService);
@@ -85,27 +87,12 @@ namespace GenesisRadioApp
             {
                 while (true)
                 {
-                    Work();
-                    Thread.Sleep(10000);
+                    try { Work(); }
+                    catch (Exception) { }
+
+                    Thread.Sleep(3000);
                 }
             });
-
-            //if (Devices.Count != 0)
-            //{
-            //    foreach (BluetoothDevice d in Devices) Log.Debug("BLE", "-----> " + d.Address);
-            //}
-
-            //Devices = new List<BluetoothDevice>();
-            //if (Manager.Adapter.IsDiscovering)
-            //{
-            //    Log.Debug("BLE", "ALREADY SCANNING");
-            //}
-            //else
-            //{
-            //    Log.Debug("BLE", "START SCANNING");
-            //    Manager.Adapter.BluetoothLeScanner.StartScan(new LeScanCallback(this));
-            //}
-
 
             // TODO: Sticky or not? idk
             // return StartCommandResult.NotSticky;
@@ -132,7 +119,7 @@ namespace GenesisRadioApp
                     .Build();
 
                 ScanFilter scanFilter = new ScanFilter.Builder()
-                    .SetServiceUuid(ParcelUuid.FromString("16f88c52-1471-4bba-95a8-17094b0520d3"))
+                    .SetServiceUuid(ParcelUuid.FromString(bluetoothServiceUUID))
                     .Build();
 
                 List<ScanFilter> scanFilters = new List<ScanFilter>();
@@ -141,20 +128,33 @@ namespace GenesisRadioApp
                 LeScanCallback callback = new LeScanCallback(this);
 
                 bleScanner.StartScan(scanFilters, scanSettings, callback);
-                Thread.Sleep(5000);
+                Thread.Sleep(3000);
                 bleScanner.StopScan(callback);
 
                 // TODO: Test that this sort works correctly
-                Devices.Sort((x, y) => y.rssi.CompareTo(x.rssi));
+                Devices.Sort((x, y) => y.Rssi.CompareTo(x.Rssi));
 
-                (BluetoothDevice, int) nearestDevice = Devices[0];
+                if (Devices.Count == 0)
+                {
+                    Log.Debug(TAG, "No devices found");
+                    return;
+                }
 
-                this.device = nearestDevice.Item1;
+                BluetoothDevice nearestDevice = Devices[0].Device;
+                int nearestDeviceRssi = Devices[0].Rssi;
 
-                Log.Debug("BLE", $"{nearestDevice.Item1.Name} ({nearestDevice.Item2})");
+                Log.Debug(TAG, $"Trying to connect to {nearestDevice.Name} ({nearestDeviceRssi} dBm)");
 
-                notificationBuilder.SetContentText("Connected to a beacon");
-                notificationManager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+                nearestDevice.ConnectGatt(this, false, new LeGattCallback(this));
+
+                bluetoothGatt.DiscoverServices();
+                // Needs some time to discover the services
+                Thread.Sleep(500);
+                BluetoothGattService bluetoothGattService = bluetoothGatt.GetService(UUID.FromString(bluetoothServiceUUID));
+                newMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(newMessageCharacteristicUUID));
+                bluetoothGatt.SetCharacteristicNotification(newMessageCharacteristic, true);
+                //BluetoothGattDescriptor bluetoothGattDescriptor = newMessageCharacteristic.GetDescriptor(UUID.FromString(newMessageCharacteristicUUID));
+                //Log.Debug(TAG, "BLA");
             }
         }
 
@@ -318,25 +318,70 @@ namespace GenesisRadioApp
 
             // Not using .Contains() because it is derrived from List in C#
             // and doesn't use the .Equals() override by the BluetoothDevice in Java
-            foreach ((BluetoothDevice device, int rssi) in m.Devices)
-                if (result.Device.Equals(device)) return;
+            foreach ((BluetoothDevice Device, int Rssi) in m.Devices)
+                if (result.Device.Equals(Device)) return;
             
             m.Devices.Add((result.Device, result.Rssi));
 
-            //Log.Debug("BLE", "Device found: " + result.Device.Address);
+            //Log.Debug(TAG, "Device found: " + result.Device.Address);
         }
 
         public override void OnScanFailed([GeneratedEnum] ScanFailure errorCode)
         {
             base.OnScanFailed(errorCode);
-            Log.Debug("BLE", "ERROR");
+            Log.Debug(TAG, "ERROR");
         }
 
         public override void OnBatchScanResults(IList<ScanResult> results)
         {
             base.OnBatchScanResults(results);
 
-            Log.Debug("BLE", "BBBBBBs");
+            Log.Debug(TAG, "BBBBBBs");
+        }
+    }
+
+    public class LeGattCallback : BluetoothGattCallback
+    {
+        static readonly string TAG = typeof(LeGattCallback).FullName;
+
+        LoraBLService m;
+        public LeGattCallback(LoraBLService m)
+        {
+            this.m = m;
+        }
+
+        public override void OnConnectionStateChange(BluetoothGatt gatt, [GeneratedEnum] GattStatus status, [GeneratedEnum] ProfileState newState)
+        {
+            base.OnConnectionStateChange(gatt, status, newState);
+
+            if (newState == ProfileState.Connected)
+            {
+                m.bluetoothGatt = gatt;
+                m.device = gatt.Device;
+
+                m.notificationBuilder.SetContentText(m.ApplicationContext.Resources.GetString(Resource.String.notification_connected_to_beacon));
+                m.notificationManager.Notify(m.NOTIFICATION_ID, m.notificationBuilder.Build());
+
+                Log.Debug(TAG, "Device connected successfully");
+            }
+            else if (newState == ProfileState.Disconnected)
+            {
+                m.device = null;
+
+                m.notificationBuilder.SetContentText(m.ApplicationContext.Resources.GetString(Resource.String.notification_looking_for_beacon));
+                m.notificationManager.Notify(m.NOTIFICATION_ID, m.notificationBuilder.Build());
+
+                Log.Debug(TAG, "Device disconnected");
+            }
+        }
+
+        public override void OnCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
+        {
+            base.OnCharacteristicChanged(gatt, characteristic);
+
+            string message = characteristic.GetStringValue(0);
+
+            Log.Debug(TAG, "Received notification from device");
         }
     }
 

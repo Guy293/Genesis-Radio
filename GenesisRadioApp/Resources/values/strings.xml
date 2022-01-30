@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">GenesisRadio</string>
     <string name="action_settings">Settings</string>
+  
+    <string name="notification_looking_for_beacon">Looking for beacon stations...</string>
+    <string name="notification_connected_to_beacon">Connected to a beacon</string>
 </resources>
