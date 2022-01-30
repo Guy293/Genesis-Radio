@@ -35,56 +35,59 @@ namespace GenesisRadioApp
         internal static readonly string CHANNEL_ID = "status_notification_channel";
         internal static readonly int NOTIFICATION_ID = 100;
 
+        NotificationManager notificationManager;
+        Notification.Builder notificationBuilder;
+
         IBinder binder;
-        public List<BluetoothDevice> Devices;
+        public List<(BluetoothDevice device, int rssi)> Devices;
         BluetoothManager bluetoothManager;
         BluetoothAdapter bluetoothAdapter;
         BluetoothLeScanner bleScanner;
+        BluetoothDevice device;
+
+        public Intent intent;
 
 
         [return: GeneratedEnum]
         public override StartCommandResult OnStartCommand(Intent intent, [GeneratedEnum] StartCommandFlags flags, int startId)
         {
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-            {
-                var channel = new NotificationChannel(CHANNEL_ID, "Status Notification", NotificationImportance.Max);
+            this.intent = intent;
 
-                channel.SetShowBadge(false);
+            var channel = new NotificationChannel(CHANNEL_ID, "Status Notification", NotificationImportance.Max);
 
-                var notificationManager = (NotificationManager)GetSystemService(NotificationService);
-                notificationManager.CreateNotificationChannel(channel);
-                var pendingIntent = PendingIntent.GetActivity(this, NOTIFICATION_ID, intent, PendingIntentFlags.Immutable);
-                var notification = new Notification.Builder(this, CHANNEL_ID)
-                .SetContentTitle("Genesis Radio")
-                .SetContentText("Looking for beacon stations...")
-                .SetContentIntent(pendingIntent)
-                .SetSmallIcon(Resource.Mipmap.ic_launcher)
-                .SetOngoing(true)
-                .Build();
-                StartForeground(NOTIFICATION_ID, notification);
-            }
+            channel.SetShowBadge(false);
 
+            notificationManager = (NotificationManager)GetSystemService(NotificationService);
+            notificationManager.CreateNotificationChannel(channel);
+            var pendingIntent = PendingIntent.GetActivity(this, NOTIFICATION_ID, intent, PendingIntentFlags.Immutable);
+            notificationBuilder = new Notification.Builder(this, CHANNEL_ID)
+            .SetContentTitle("Genesis Radio")
+            .SetContentText("Looking for beacon stations...")
+            .SetContentIntent(pendingIntent)
+            .SetSmallIcon(Resource.Mipmap.ic_launcher)
+            .SetOngoing(true);
+
+            StartForeground(NOTIFICATION_ID, notificationBuilder.Build());
+
+
+            //notificationBuilder.SetContentText("Found!");
+            //notificationManager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+
+            Devices = new List<(BluetoothDevice device, int rssi)>();
 
 
             bluetoothManager = (BluetoothManager)Application.Context.GetSystemService(BluetoothService);
             bluetoothAdapter = bluetoothManager.Adapter;
             bleScanner = bluetoothAdapter.BluetoothLeScanner;
 
-            // TODO: Test which scan mode to use
-            ScanSettings scanSettings = new ScanSettings.Builder()
-                //.SetScanMode(Android.Bluetooth.LE.ScanMode.LowPower)
-                .SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency)
-                .SetMatchMode(BluetoothScanMatchMode.Aggressive)
-                .Build();
-
-            ScanFilter scanFilter = new ScanFilter.Builder()
-                .SetServiceUuid(ParcelUuid.FromString("16f88c52-1471-4bba-95a8-17094b0520d3"))
-                .Build();
-
-            List<ScanFilter> scanFilters = new List<ScanFilter>();
-            scanFilters.Add(scanFilter);
-
-            bleScanner.StartScan(scanFilters, scanSettings, new LeScanCallback(this));
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    Work();
+                    Thread.Sleep(10000);
+                }
+            });
 
             //if (Devices.Count != 0)
             //{
@@ -112,6 +115,46 @@ namespace GenesisRadioApp
         {
             binder = new LoraBLServiceBinder(this);
             return binder;
+        }
+
+        private void Work()
+        {
+            if (this.device == null)
+            {
+                Devices.Clear();
+
+                // TODO: Test which scan mode to use
+                ScanSettings scanSettings = new ScanSettings.Builder()
+                    //.SetScanMode(Android.Bluetooth.LE.ScanMode.LowPower)
+                    .SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency)
+                    .SetMatchMode(BluetoothScanMatchMode.Aggressive)
+                    .Build();
+
+                ScanFilter scanFilter = new ScanFilter.Builder()
+                    .SetServiceUuid(ParcelUuid.FromString("16f88c52-1471-4bba-95a8-17094b0520d3"))
+                    .Build();
+
+                List<ScanFilter> scanFilters = new List<ScanFilter>();
+                scanFilters.Add(scanFilter);
+
+                LeScanCallback callback = new LeScanCallback(this);
+
+                bleScanner.StartScan(scanFilters, scanSettings, callback);
+                Thread.Sleep(5000);
+                bleScanner.StopScan(callback);
+
+                // TODO: Test that this sort works correctly
+                Devices.Sort((x, y) => y.rssi.CompareTo(x.rssi));
+
+                (BluetoothDevice, int) nearestDevice = Devices[0];
+
+                this.device = nearestDevice.Item1;
+
+                Log.Debug("BLE", $"{nearestDevice.Item1.Name} ({nearestDevice.Item2})");
+
+                notificationBuilder.SetContentText("Connected to a beacon");
+                notificationManager.Notify(NOTIFICATION_ID, notificationBuilder.Build());
+            }
         }
 
 
@@ -268,8 +311,16 @@ namespace GenesisRadioApp
         {
             base.OnScanResult(callbackType, result);
 
-            if (!m.Devices.Contains(result.Device)) m.Devices.Add(result.Device);
-            Log.Debug("BLE", "Device found: " + result.Device.Address);
+            
+
+            // Not using .Contains() because it is derrived from List in C#
+            // and doesn't use the .Equals() override by the BluetoothDevice in Java
+            foreach ((BluetoothDevice device, int rssi) in m.Devices)
+                if (result.Device.Equals(device)) return;
+            
+            m.Devices.Add((result.Device, result.Rssi));
+
+            //Log.Debug("BLE", "Device found: " + result.Device.Address);
         }
 
         public override void OnScanFailed([GeneratedEnum] ScanFailure errorCode)
@@ -286,8 +337,8 @@ namespace GenesisRadioApp
         }
     }
 
-    class ModuleNotFoundException : Exception
-    {
-        public ModuleNotFoundException() { }
-    }
+    //class ModuleNotFoundException : Exception
+    //{
+    //    public ModuleNotFoundException() { }
+    //}
 }
