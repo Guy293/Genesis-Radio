@@ -28,6 +28,8 @@ namespace GenesisRadioApp
         List<MessageContent> messageList = new List<MessageContent>();
         MessageViewAdapter messageListAdapter;
 
+        NewMessageBroadcastReceiver newMessageBroadcastReceiver;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -98,6 +100,28 @@ namespace GenesisRadioApp
 
             //RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
             //mRecyclerView.SetLayoutManager(mLayoutManager);
+
+            this.newMessageBroadcastReceiver = new NewMessageBroadcastReceiver(this);
+
+            LocalBroadcastManager.GetInstance(this)
+                .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
+        }
+
+
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+
+            this.newMessageBroadcastReceiver = new NewMessageBroadcastReceiver(this);
+
+            LocalBroadcastManager.GetInstance(this)
+                .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
+        }
+        protected override void OnPause()
+        {
+            LocalBroadcastManager.GetInstance(this).UnregisterReceiver(this.newMessageBroadcastReceiver);
+            base.OnPause();
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -155,5 +179,22 @@ namespace GenesisRadioApp
         //        Caption = itemView.FindViewById<TextView>(Resource.Id.textView);
         //    }
         //}
+    }
+
+    class NewMessageBroadcastReceiver : BroadcastReceiver
+    {
+        MainActivity mainActivity;
+
+        public NewMessageBroadcastReceiver(MainActivity mainActivity)
+        {
+            this.mainActivity = mainActivity;
+        }
+
+        public override void OnReceive(Context context, Intent intent)
+        {
+            string message = intent.GetStringExtra("message");
+
+            this.mainActivity.InsertMessage(new MessageContent(message, false));
+        }
     }
 }

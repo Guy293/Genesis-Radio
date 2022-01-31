@@ -20,6 +20,7 @@ using System.Threading;
 using Android.Bluetooth;
 using Android.Bluetooth.LE;
 using Android.Util;
+using Android.Support.V4.Content;
 
 namespace GenesisRadioApp
 {
@@ -87,11 +88,12 @@ namespace GenesisRadioApp
             {
                 while (true)
                 {
-                    try { Work(); }
-                    catch (Exception) { }
-
+                    Work();
                     Thread.Sleep(3000);
                 }
+            }).ContinueWith((t) =>
+            {
+                if (t.IsFaulted) throw t.Exception;
             });
 
             // TODO: Sticky or not? idk
@@ -147,14 +149,15 @@ namespace GenesisRadioApp
 
                 nearestDevice.ConnectGatt(this, false, new LeGattCallback(this));
 
+                while (bluetoothGatt == null) { }
+
                 bluetoothGatt.DiscoverServices();
-                // Needs some time to discover the services
-                Thread.Sleep(500);
+
+                while (bluetoothGatt.Services.Count == 0) { }
+
                 BluetoothGattService bluetoothGattService = bluetoothGatt.GetService(UUID.FromString(bluetoothServiceUUID));
                 newMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(newMessageCharacteristicUUID));
                 bluetoothGatt.SetCharacteristicNotification(newMessageCharacteristic, true);
-                //BluetoothGattDescriptor bluetoothGattDescriptor = newMessageCharacteristic.GetDescriptor(UUID.FromString(newMessageCharacteristicUUID));
-                //Log.Debug(TAG, "BLA");
             }
         }
 
@@ -380,6 +383,11 @@ namespace GenesisRadioApp
             base.OnCharacteristicChanged(gatt, characteristic);
 
             string message = characteristic.GetStringValue(0);
+
+            // TODO: Use a proper action name (com...)
+            Intent intent = new Intent("new-message");
+            intent.PutExtra("message", message);
+            LocalBroadcastManager.GetInstance(this.m.ApplicationContext).SendBroadcast(intent);
 
             Log.Debug(TAG, "Received notification from device");
         }
