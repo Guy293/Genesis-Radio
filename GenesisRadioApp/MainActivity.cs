@@ -27,6 +27,8 @@ namespace GenesisRadioApp
         ListView messageListView;
         List<MessageContent> messageList = new List<MessageContent>();
         MessageViewAdapter messageListAdapter;
+        public List<Message> messageList = new List<Message>();
+        public MessageViewAdapter messageListAdapter;
 
         NewMessageBroadcastReceiver newMessageBroadcastReceiver;
 
@@ -132,7 +134,7 @@ namespace GenesisRadioApp
         }
 	    
 
-        public void InsertMessage(MessageContent message)
+        public void InsertMessage(Message message)
         {
             messageList.Add(message);
 
