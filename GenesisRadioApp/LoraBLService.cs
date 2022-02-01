@@ -39,6 +39,8 @@ namespace GenesisRadioApp
         readonly string CHANNEL_ID = "status_notification_channel";
         public readonly int NOTIFICATION_ID = 100;
 
+        bool isRunning = false;
+
         public NotificationManager notificationManager;
         public Notification.Builder notificationBuilder;
 
@@ -61,6 +63,11 @@ namespace GenesisRadioApp
         [return: GeneratedEnum]
         public override StartCommandResult OnStartCommand(Intent intent, [GeneratedEnum] StartCommandFlags flags, int startId)
         {
+            if (isRunning)
+            {
+                return StartCommandResult.Sticky;
+            }
+
             this.intent = intent;
 
             var channel = new NotificationChannel(CHANNEL_ID, "Status Notification", NotificationImportance.Max);
@@ -78,7 +85,6 @@ namespace GenesisRadioApp
             .SetOngoing(true);
 
             StartForeground(NOTIFICATION_ID, notificationBuilder.Build());
-
 
             database = new Database();
 
@@ -99,6 +105,8 @@ namespace GenesisRadioApp
             {
                 if (t.IsFaulted) throw t.Exception;
             });
+
+            isRunning = true;
 
             // TODO: Sticky or not? idk
             // return StartCommandResult.NotSticky;
@@ -157,6 +165,7 @@ namespace GenesisRadioApp
 
                 bluetoothGatt.DiscoverServices();
 
+
                 while (bluetoothGatt.Services.Count == 0) { }
 
                 BluetoothGattService bluetoothGattService = bluetoothGatt.GetService(UUID.FromString(bluetoothServiceUUID));
@@ -164,7 +173,6 @@ namespace GenesisRadioApp
                 bluetoothGatt.SetCharacteristicNotification(newMessageCharacteristic, true);
             }
         }
-
 
         /*
         public LoraBLService()
