@@ -16,12 +16,21 @@ using Android.Content.PM;
 using Android.Content;
 using Android.Bluetooth;
 using System.Collections.Generic;
+using AndroidX.Activity.Result;
+using AndroidX.Activity.Result.Contract;
+using static Xamarin.Essentials.Permissions;
+using Xamarin.Essentials;
+using System.Threading.Tasks;
 
 namespace GenesisRadioApp
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
+        const int BLUETOOTH_PERMISSION_REQUEST = 1;
+        const int FINE_LOCATION_PERMISSION_REQUEST = 2;
+        const int BACKGROUND_LOCATION_PERMISSION_REQUEST = 3;
+
         LoraBLService module;
         LoraBLSerivceConnection loraBLServiceConnection;
         ListView messageListView;
@@ -48,33 +57,13 @@ namespace GenesisRadioApp
             messageListView.Adapter = messageListAdapter;
 
 
-            //// Check for bluetooth permissions
-            //if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-            //{
-            //    RequestPermissions(new string[] {
-
-            //        Manifest.Permission.Bluetooth,
-            //        Manifest.Permission.BluetoothAdmin,
-            //        Manifest.Permission.BluetoothConnect,
-            //        Manifest.Permission.BluetoothScan,
-            //        Manifest.Permission.AccessBackgroundLocation,
-            //        Manifest.Permission.AccessFineLocation,
-            //    }, REQUEST_ENABLE_BT);
-            //}
-            //else
-            //{
-            //    Intent enableBtIntent = new Intent(BluetoothAdapter.ActionRequestEnable);
-            //    StartActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            //}
-
-            RequestPermissions(new String[] {
+            // Asks all the permissions needed, good enough for now
+            // TODO: Make sure the user actually accpets the permissions
+            // https://stackoverflow.com/questions/46070814/how-to-nag-ask-user-to-enable-permission-until-user-gives-it/46071096
+            RequestPermissions(new string[] {
                 Manifest.Permission.BluetoothScan,
-                Manifest.Permission.AccessCoarseLocation,
-                Manifest.Permission.AccessFineLocation,
-                Manifest.Permission.AccessBackgroundLocation,
-            }, 1);
-
-            // GetSystemService(ActivityService);
+                Manifest.Permission.BluetoothConnect
+            }, BLUETOOTH_PERMISSION_REQUEST);
 
 
             this.loraBLServiceConnection = new LoraBLSerivceConnection();
@@ -82,6 +71,7 @@ namespace GenesisRadioApp
             Intent serviceIntent = new Intent(this, typeof(LoraBLService));
             BindService(serviceIntent, this.loraBLServiceConnection, Bind.Important);
             StartForegroundService(serviceIntent);
+
 
             // module = new LoraBLService(this);
 
@@ -116,8 +106,6 @@ namespace GenesisRadioApp
                 .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
         }
 
-
-
         //protected override void OnResume()
         //{
         //    base.OnResume();
@@ -133,11 +121,30 @@ namespace GenesisRadioApp
         //    base.OnPause();
         //}
 
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
+            if (requestCode == BLUETOOTH_PERMISSION_REQUEST)
+            {
+                RequestPermissions(new string[] { Manifest.Permission.AccessFineLocation }, FINE_LOCATION_PERMISSION_REQUEST);
+            }
+
+            if (requestCode == FINE_LOCATION_PERMISSION_REQUEST)
+            {
+                new Android.App.AlertDialog.Builder(this)
+                    .SetTitle("Background Location Permission Needed")
+                    .SetMessage("Please Set Location Permission To Allow All The Time")
+                    .SetPositiveButton(
+                        "OK",
+                        (senderAlert, args) =>
+                        {
+                            RequestPermissions(new string[] { Manifest.Permission.AccessBackgroundLocation }, BACKGROUND_LOCATION_PERMISSION_REQUEST);
+                        })
+                    .Create()
+                    .Show();
+            }
         }
 	    
 
