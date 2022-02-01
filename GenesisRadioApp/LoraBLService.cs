@@ -92,6 +92,12 @@ namespace GenesisRadioApp
 
             bluetoothManager = (BluetoothManager)Application.Context.GetSystemService(BluetoothService);
             bluetoothAdapter = bluetoothManager.Adapter;
+
+            if (bluetoothAdapter.BluetoothLeScanner == null)
+            {
+                bluetoothAdapter.Enable();
+            }
+
             bleScanner = bluetoothAdapter.BluetoothLeScanner;
 
             Task.Run(() =>
