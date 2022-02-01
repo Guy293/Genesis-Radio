@@ -21,6 +21,7 @@ using Android.Bluetooth;
 using Android.Bluetooth.LE;
 using Android.Util;
 using Android.Support.V4.Content;
+using System.Collections.ObjectModel;
 
 namespace GenesisRadioApp
 {
@@ -52,6 +53,8 @@ namespace GenesisRadioApp
         public BluetoothDevice device;
         public BluetoothGatt bluetoothGatt;
 
+        public Database database;
+
         public Intent intent;
 
 
@@ -77,8 +80,9 @@ namespace GenesisRadioApp
             StartForeground(NOTIFICATION_ID, notificationBuilder.Build());
 
 
-            Devices = new List<(BluetoothDevice Device, int Rssi)>();
+            database = new Database();
 
+            Devices = new List<(BluetoothDevice Device, int Rssi)>();
 
             bluetoothManager = (BluetoothManager)Application.Context.GetSystemService(BluetoothService);
             bluetoothAdapter = bluetoothManager.Adapter;
@@ -382,12 +386,18 @@ namespace GenesisRadioApp
         {
             base.OnCharacteristicChanged(gatt, characteristic);
 
-            string message = characteristic.GetStringValue(0);
+            string messageString = characteristic.GetStringValue(0);
 
+            Message message = new Message(messageString, false);
+            m.database.SaveMessage(message);
+
+
+            // Send broadcast to main activity
             // TODO: Use a proper action name (com...)
             Intent intent = new Intent("new-message");
-            intent.PutExtra("message", message);
+            intent.PutExtra("message", messageString);
             LocalBroadcastManager.GetInstance(this.m.ApplicationContext).SendBroadcast(intent);
+
 
             Log.Debug(TAG, "Received notification from device");
         }

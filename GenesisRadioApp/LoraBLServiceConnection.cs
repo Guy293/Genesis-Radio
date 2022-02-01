@@ -16,21 +16,13 @@ namespace GenesisRadioApp
     {
         static readonly string TAG = typeof(LoraBLSerivceConnection).FullName;
 
-        MainActivity mainActivity;
-        public LoraBLSerivceConnection(MainActivity activity)
-        {
-            IsConnected = false;
-            Binder = null;
-            mainActivity = activity;
-        }
-
-        public bool IsConnected { get; private set; }
         public LoraBLServiceBinder Binder { get; private set; }
+        public LoraBLService Service { get; private set; }
 
-        public void OnServiceConnected(ComponentName name, IBinder service)
+        public void OnServiceConnected(ComponentName name, IBinder serviceBinder)
         {
-            Binder = service as LoraBLServiceBinder;
-            IsConnected = this.Binder != null;
+            Binder = serviceBinder as LoraBLServiceBinder;
+            Service = Binder.GetBackgroundService();
 
             Log.Debug(TAG, $"OnServiceConnected {name.ClassName}");
             //string message = "onServiceConnected - ";
@@ -53,8 +45,8 @@ namespace GenesisRadioApp
         public void OnServiceDisconnected(ComponentName name)
         {
             Log.Debug(TAG, $"OnServiceDisconnected {name.ClassName}");
-            IsConnected = false;
             Binder = null;
+            Service = null;
             //mainActivity.UpdateUiForUnboundService();
         }
 

@@ -25,12 +25,12 @@ namespace GenesisRadioApp
         LoraBLService module;
         LoraBLSerivceConnection loraBLServiceConnection;
         ListView messageListView;
-        List<MessageContent> messageList = new List<MessageContent>();
-        MessageViewAdapter messageListAdapter;
         public List<Message> messageList = new List<Message>();
         public MessageViewAdapter messageListAdapter;
 
         NewMessageBroadcastReceiver newMessageBroadcastReceiver;
+
+        public Database database;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -38,7 +38,11 @@ namespace GenesisRadioApp
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
+            database = new Database();
+
             messageListView = FindViewById<ListView>(Resource.Id.messages_list);
+
+            messageList = database.GetMessages();
 
             messageListAdapter = new MessageViewAdapter(this, messageList);
             messageListView.Adapter = messageListAdapter;
@@ -70,10 +74,13 @@ namespace GenesisRadioApp
                 Manifest.Permission.AccessBackgroundLocation,
             }, 1);
 
-            this.loraBLServiceConnection = new LoraBLSerivceConnection(this);
+            // GetSystemService(ActivityService);
+
+
+            this.loraBLServiceConnection = new LoraBLSerivceConnection();
 
             Intent serviceIntent = new Intent(this, typeof(LoraBLService));
-            BindService(serviceIntent, this.loraBLServiceConnection, Bind.AutoCreate);
+            BindService(serviceIntent, this.loraBLServiceConnection, Bind.Important);
             StartForegroundService(serviceIntent);
 
             // module = new LoraBLService(this);
@@ -111,20 +118,20 @@ namespace GenesisRadioApp
 
 
 
-        protected override void OnResume()
-        {
-            base.OnResume();
+        //protected override void OnResume()
+        //{
+        //    base.OnResume();
 
-            this.newMessageBroadcastReceiver = new NewMessageBroadcastReceiver(this);
+        //    this.newMessageBroadcastReceiver = new NewMessageBroadcastReceiver(this);
 
-            LocalBroadcastManager.GetInstance(this)
-                .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
-        }
-        protected override void OnPause()
-        {
-            LocalBroadcastManager.GetInstance(this).UnregisterReceiver(this.newMessageBroadcastReceiver);
-            base.OnPause();
-        }
+        //    LocalBroadcastManager.GetInstance(this)
+        //        .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
+        //}
+        //protected override void OnPause()
+        //{
+        //    LocalBroadcastManager.GetInstance(this).UnregisterReceiver(this.newMessageBroadcastReceiver);
+        //    base.OnPause();
+        //}
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
@@ -194,9 +201,22 @@ namespace GenesisRadioApp
 
         public override void OnReceive(Context context, Intent intent)
         {
-            string message = intent.GetStringExtra("message");
 
-            this.mainActivity.InsertMessage(new MessageContent(message, false));
+            //string message = intent.GetStringExtra("message");
+
+            //this.mainActivity.InsertMessage(new MessageContent(message, false));
+
+            List<Message> newMessageList = mainActivity.database.GetMessages();
+
+            foreach (Message message in newMessageList)
+            {
+                if (!mainActivity.messageList.Contains(message))
+                {
+                    mainActivity.messageList.Add(message);
+                }
+            }
+
+            mainActivity.messageListAdapter.NotifyDataSetChanged();
         }
     }
 }

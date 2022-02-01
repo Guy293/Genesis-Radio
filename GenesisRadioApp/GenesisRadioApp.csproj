@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContactList.cs" />
+    <Compile Include="Database.cs" />
     <Compile Include="LoraBLService.cs" />
     <Compile Include="LoraBLServiceBinder.cs" />
     <Compile Include="LoraBLServiceConnection.cs" />
@@ -107,6 +108,9 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="sqlite-net-pcl">
+      <Version>1.8.116</Version>
+    </PackageReference>
     <PackageReference Include="Xamarin.Android.Support.v7.RecyclerView">
       <Version>28.0.0.3</Version>
     </PackageReference>

@@ -12,12 +12,12 @@ using Android.Widget;
 
 namespace GenesisRadioApp
 {
-    internal class MessageViewAdapter : BaseAdapter
+    public class MessageViewAdapter : BaseAdapter
     {
         private Activity activity;
-        private List<MessageContent> messageList;
+        private List<Message> messageList;
 
-        public MessageViewAdapter(Activity activity, List<MessageContent> lstMessage)
+        public MessageViewAdapter(Activity activity, List<Message> lstMessage)
         {
             this.activity = activity;
             this.messageList = lstMessage;
@@ -46,7 +46,7 @@ namespace GenesisRadioApp
             message_content = ItemView.FindViewById<TextView>(Resource.Id.message_text);
             message_time = ItemView.FindViewById<TextView>(Resource.Id.message_time);
 
-            message_content.Text = messageList[position].Message;
+            message_content.Text = messageList[position].Content;
             message_time.Text = messageList[position].Time;
 
 
