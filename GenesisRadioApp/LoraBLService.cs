@@ -109,7 +109,7 @@ namespace GenesisRadioApp
                 }
             }).ContinueWith((t) =>
             {
-                if (t.IsFaulted) throw t.Exception;
+                if (t.IsFaulted) Log.Error(TAG, t.Exception.ToString());
             });
 
             isRunning = true;
