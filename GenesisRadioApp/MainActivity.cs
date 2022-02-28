@@ -31,7 +31,6 @@ namespace GenesisRadioApp
         const int FINE_LOCATION_PERMISSION_REQUEST = 2;
         const int BACKGROUND_LOCATION_PERMISSION_REQUEST = 3;
 
-        LoraBLService module;
         LoraBLSerivceConnection loraBLServiceConnection;
         ListView messageListView;
         public List<Message> messageList = new List<Message>();
@@ -60,10 +59,16 @@ namespace GenesisRadioApp
             // Asks all the permissions needed, good enough for now
             // TODO: Make sure the user actually accpets the permissions
             // https://stackoverflow.com/questions/46070814/how-to-nag-ask-user-to-enable-permission-until-user-gives-it/46071096
-            RequestPermissions(new string[] {
-                Manifest.Permission.BluetoothScan,
-                Manifest.Permission.BluetoothConnect
-            }, BLUETOOTH_PERMISSION_REQUEST);
+            if (CheckSelfPermission(Manifest.Permission.BluetoothScan) == Permission.Denied ||
+                CheckSelfPermission(Manifest.Permission.BluetoothConnect) == Permission.Denied ||
+                CheckSelfPermission(Manifest.Permission.AccessFineLocation) == Permission.Denied ||
+                CheckSelfPermission(Manifest.Permission.AccessBackgroundLocation) == Permission.Denied)
+            {
+                RequestPermissions(new string[] {
+                    Manifest.Permission.BluetoothScan,
+                    Manifest.Permission.BluetoothConnect
+                }, BLUETOOTH_PERMISSION_REQUEST);
+            }
 
 
             this.loraBLServiceConnection = new LoraBLSerivceConnection();
@@ -73,21 +78,19 @@ namespace GenesisRadioApp
             StartForegroundService(serviceIntent);
 
 
-            // module = new LoraBLService(this);
+            EditText input = FindViewById<EditText>(Resource.Id.input);
 
-
-            //EditText input = FindViewById<EditText>(Resource.Id.input);
-
-            //input.KeyPress += (object sender, View.KeyEventArgs e) =>
-            //{
-            //    e.Handled = false;
-            //    if (e.Event.Action == KeyEventActions.Down && e.KeyCode == Keycode.Enter)
-            //    {
-            //        module.SendMessage(input.Text);
-            //        input.Text = "";
-            //        e.Handled = true;
-            //    }
-            //};
+            input.KeyPress += (object sender, View.KeyEventArgs e) =>
+            {
+                e.Handled = false;
+                if (e.Event.Action == KeyEventActions.Down && e.KeyCode == Keycode.Enter)
+                {
+                    InsertMessage(new Message(input.Text, true));
+                    this.loraBLServiceConnection.Service.SendMessage(input.Text);
+                    input.Text = "";
+                    e.Handled = true;
+                }
+            };
 
 
             //ContactList mContactList = new ContactList();
@@ -104,6 +107,28 @@ namespace GenesisRadioApp
 
             LocalBroadcastManager.GetInstance(this)
                 .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
+        }
+
+        public void InsertMessage(Message message) {
+        
+            database.SaveMessage(message);
+
+            UpdateMessageList();
+        }
+
+        public void UpdateMessageList()
+        {
+            List<Message> newMessageList = database.GetMessages();
+
+            foreach (Message message in newMessageList)
+            {
+                if (!messageList.Contains(message))
+                {
+                    messageList.Add(message);
+                }
+            }
+
+            messageListAdapter.NotifyDataSetChanged();
         }
 
         //protected override void OnResume()
@@ -147,14 +172,6 @@ namespace GenesisRadioApp
             }
         }
 	    
-
-        public void InsertMessage(Message message)
-        {
-            messageList.Add(message);
-
-            messageListAdapter.NotifyDataSetChanged();
-
-        }
 
         //public class ContactListAdapter : RecyclerView.Adapter
         //{
@@ -213,17 +230,7 @@ namespace GenesisRadioApp
 
             //this.mainActivity.InsertMessage(new MessageContent(message, false));
 
-            List<Message> newMessageList = mainActivity.database.GetMessages();
-
-            foreach (Message message in newMessageList)
-            {
-                if (!mainActivity.messageList.Contains(message))
-                {
-                    mainActivity.messageList.Add(message);
-                }
-            }
-
-            mainActivity.messageListAdapter.NotifyDataSetChanged();
+            mainActivity.UpdateMessageList();
         }
     }
 }

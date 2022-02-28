@@ -32,6 +32,7 @@
 
 #define SERVICE_UUID "16f88c52-1471-4bba-95a8-17094b0520d3"
 #define NEW_MESSAGE_CHARACTERISTIC_UUID "af77d21b-1a5c-4910-b4b4-c98220ac0e79"
+#define SEND_MESSAGE_CHARACTERISTIC_UUID "8ef6e254-8921-4ef2-9726-368055789ba4"
 
 #define BLE_DEVICE_NAME "ESP32-Lora"
 
@@ -65,12 +66,23 @@ EBYTE Transceiver(&Serial2, PIN_M0, PIN_M1, PIN_AUX);
 
 
 BLECharacteristic *newMessageCharacteristic;
+BLECharacteristic *sendMessageCharacteristic;
 
 
 class ServerCallbacks : public BLEServerCallbacks {
     void onDisconnect(BLEServer* bleServer) {
         SerialDebug.println("BLE device disconnected");
         bleServer->startAdvertising();
+    }
+};
+
+class SendMessageCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+        std::string value = pCharacteristic->getValue();
+
+        DATA dataSend;
+        dataSend.Message = value.c_str();
+        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
     }
 };
 
@@ -91,10 +103,11 @@ void setup()
                                             BLECharacteristic::PROPERTY_READ |
                                             BLECharacteristic::PROPERTY_NOTIFY
                                         );
-    // pNewMessageCharacteristic = pService->createCharacteristic(
-    //                                         NEW_MESSAGE_CHARACTERISTIC_UUID,
-    //                                         BLECharacteristic::PROPERTY_READ
-    //                                     );
+    sendMessageCharacteristic = bleService->createCharacteristic(
+                                            SEND_MESSAGE_CHARACTERISTIC_UUID,
+                                            BLECharacteristic::PROPERTY_WRITE
+                                        );
+    sendMessageCharacteristic->setCallbacks(new SendMessageCallbacks());
 
     // TODO: Might remove
     bleService->start();
@@ -109,37 +122,42 @@ void setup()
 
     pinMode(PIN_LED, OUTPUT);
 
-    // Serial2.begin(9600);
-    // SerialDebug.println("Lora Module Started");
+    Serial2.begin(9600);
 
-    // Transceiver.init();
+    Transceiver.init();
 
-    // Transceiver.SetTransmitRSSI(1);
-    // // Transceiver.SetTransmissionMode(0);
-    // Transceiver.SetUARTBaudRate(0x3);
-    // Transceiver.SetAirDataRate(0x2);
-    // Transceiver.SetAddressL(0x0);
-    // Transceiver.SetAddressH(0x0);
-    // Transceiver.SetListenBeforeTransmit(0x1);
-    // // Transceiver.SetChannel(0x0);
-    // Transceiver.SetChannel(0x3C);
-    // Transceiver.SaveParameters();
+    Transceiver.SetTransmitRSSI(1);
+    // Transceiver.SetTransmissionMode(0);
+    Transceiver.SetUARTBaudRate(0x3);
+    Transceiver.SetAirDataRate(0x2);
+    Transceiver.SetAddressL(0x0);
+    Transceiver.SetAddressH(0x0);
+    Transceiver.SetListenBeforeTransmit(0x1);
+    // Transceiver.SetChannel(0x0);
+    Transceiver.SetChannel(0x3C); // Frequency - 850.125 + channel
+    Transceiver.SaveParameters();
+
+    SerialDebug.println("Lora Module Initialized");
 
     // Transceiver.PrintParameters();
 
-    // ledOnUntil = millis();
+    ledOnUntil = 0;
     // Last = millis();
 }
 
 void loop()
 {
+    // Serial.println("hola");
+    // DATA dataSend;
+    // dataSend.Message = "hola";
+    // Transceiver.SendStruct(&dataSend, sizeof(dataSend));
 
-    delay(2000);
+    // delay(2000);
 
-    // newMessageCharacteristic->setValue("message123");
-    // newMessageCharacteristic->notify();
+    // // newMessageCharacteristic->setValue("message123");
+    // // newMessageCharacteristic->notify();
 
-    return;
+    // return;
 
     if (blinkEnabled) {
         if (ledOnUntil >= millis())
@@ -160,7 +178,7 @@ void loop()
         }
     }
 
-    if (Serial2.available())
+    if (Transceiver.available())
     {
         DATA dataRecv;
         Transceiver.GetStruct(&dataRecv, sizeof(dataRecv));
@@ -168,9 +186,11 @@ void loop()
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
-        String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
+        // String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
+        char message[dataRecv.Message.length()];
+        dataRecv.Message.toCharArray(message, dataRecv.Message.length());
 
-        newMessageCharacteristic->setValue("message123");
+        newMessageCharacteristic->setValue(message);
         newMessageCharacteristic->notify();
         //SerialBT.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
 

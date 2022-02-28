@@ -47,7 +47,9 @@ namespace GenesisRadioApp
         IBinder binder;
         readonly string bluetoothServiceUUID = "16f88c52-1471-4bba-95a8-17094b0520d3";
         readonly string newMessageCharacteristicUUID = "af77d21b-1a5c-4910-b4b4-c98220ac0e79";
+        readonly string sendMessageCharacteristicUUID = "8ef6e254-8921-4ef2-9726-368055789ba4";
         BluetoothGattCharacteristic newMessageCharacteristic;
+        BluetoothGattCharacteristic sendMessageCharacteristic;
         public List<(BluetoothDevice Device, int Rssi)> Devices;
         BluetoothManager bluetoothManager;
         BluetoothAdapter bluetoothAdapter;
@@ -104,12 +106,17 @@ namespace GenesisRadioApp
             {
                 while (true)
                 {
-                    Work();
+                    try
+                    {
+                        Work();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(TAG, ex.ToString());
+                    }
+
                     Thread.Sleep(3000);
                 }
-            }).ContinueWith((t) =>
-            {
-                if (t.IsFaulted) Log.Error(TAG, t.Exception.ToString());
             });
 
             isRunning = true;
@@ -183,9 +190,18 @@ namespace GenesisRadioApp
                 while (bluetoothGatt.Services.Count == 0) { }
 
                 BluetoothGattService bluetoothGattService = bluetoothGatt.GetService(UUID.FromString(bluetoothServiceUUID));
+
                 newMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(newMessageCharacteristicUUID));
                 bluetoothGatt.SetCharacteristicNotification(newMessageCharacteristic, true);
+
+                sendMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(sendMessageCharacteristicUUID));
             }
+        }
+
+        public void SendMessage(string message)
+        {
+            sendMessageCharacteristic.SetValue(message);
+            bluetoothGatt.WriteCharacteristic(sendMessageCharacteristic);
         }
 
         /*
@@ -260,33 +276,7 @@ namespace GenesisRadioApp
         }
         */
 
-        //public void ConnectToModule()
-        //{
-        //    foreach (BluetoothDevice d in this.btAdapter.BondedDevices)
-        //    {
-        //        if (d.Name.StartsWith("ESP32-Lora"))
-        //        {
-        //            Log.Debug("ESP32-Lora Found!");
-        //            this.btDevice = d;
-        //        }
-        //    }
-
-        //    if (this.btDevice == null)
-        //    {
-        //        throw new ModuleNotFoundException();
-        //    }
-
-        //    // TODO: The fuck is this string
-        //    btSocket = btDevice.CreateRfcommSocketToServiceRecord(UUID.FromString("00001101-0000-1000-8000-00805f9b34fb"));
-
-        //    btSocket.Connect();
-        //    Log.Debug("ESP32-Lora Connected!");
-
-        //    Thread t = new Thread(new ThreadStart(Run));
-        //    t.IsBackground = true;
-        //    t.Start();
-        //}
-
+        
         //public void SendMessage(string message)
         //{
         //    activity.InsertMessage(new MessageContent(message, true));
@@ -358,14 +348,7 @@ namespace GenesisRadioApp
         public override void OnScanFailed([GeneratedEnum] ScanFailure errorCode)
         {
             base.OnScanFailed(errorCode);
-            Log.Debug(TAG, "ERROR");
-        }
-
-        public override void OnBatchScanResults(IList<ScanResult> results)
-        {
-            base.OnBatchScanResults(results);
-
-            Log.Debug(TAG, "BBBBBBs");
+            Log.Error(TAG, "Scan failed. Error code: " + errorCode.ToString());
         }
     }
 
@@ -391,7 +374,7 @@ namespace GenesisRadioApp
                 m.notificationBuilder.SetContentText(m.ApplicationContext.Resources.GetString(Resource.String.notification_connected_to_beacon));
                 m.notificationManager.Notify(m.NOTIFICATION_ID, m.notificationBuilder.Build());
 
-                Log.Debug(TAG, "Device connected successfully");
+                Log.Debug(TAG, "Device connected");
             }
             else if (newState == ProfileState.Disconnected)
             {
@@ -417,9 +400,8 @@ namespace GenesisRadioApp
             // Send broadcast to main activity
             // TODO: Use a proper action name (com...)
             Intent intent = new Intent("new-message");
-            intent.PutExtra("message", messageString);
+            //intent.PutExtra("message", messageString);
             LocalBroadcastManager.GetInstance(this.m.ApplicationContext).SendBroadcast(intent);
-
 
             Log.Debug(TAG, "Received notification from device");
         }
