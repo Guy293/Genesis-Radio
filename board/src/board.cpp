@@ -188,7 +188,7 @@ void loop()
 
         // String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
         char message[dataRecv.Message.length()];
-        dataRecv.Message.toCharArray(message, dataRecv.Message.length());
+        dataRecv.Message.toCharArray(message, dataRecv.Message.length()+1);
 
         newMessageCharacteristic->setValue(message);
         newMessageCharacteristic->notify();
