@@ -64,13 +64,13 @@ bool ledStatus;
 EBYTE Transceiver(&Serial2, PIN_M0, PIN_M1, PIN_AUX);
 
 
-BLECharacteristic *pNewMessageCharacteristic;
+BLECharacteristic *newMessageCharacteristic;
 
 
 class ServerCallbacks : public BLEServerCallbacks {
-    void onDisconnect(BLEServer* pServer) {
+    void onDisconnect(BLEServer* bleServer) {
         SerialDebug.println("BLE device disconnected");
-        pServer->startAdvertising();
+        bleServer->startAdvertising();
     }
 };
 
@@ -82,11 +82,11 @@ void setup()
 
     SerialDebug.println("Initializing BLE");
     BLEDevice::init(BLE_DEVICE_NAME);
-    BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new ServerCallbacks());
-    BLEService *pService = pServer->createService(SERVICE_UUID);
+    BLEServer *bleServer = BLEDevice::createServer();
+    bleServer->setCallbacks(new ServerCallbacks());
+    BLEService *bleService = bleServer->createService(SERVICE_UUID);
     // TODO: Using notify for now, but might switch to indicate for confirming message
-    pNewMessageCharacteristic = pService->createCharacteristic(
+    newMessageCharacteristic = bleService->createCharacteristic(
                                             NEW_MESSAGE_CHARACTERISTIC_UUID,
                                             BLECharacteristic::PROPERTY_READ |
                                             BLECharacteristic::PROPERTY_NOTIFY
@@ -97,7 +97,7 @@ void setup()
     //                                     );
 
     // TODO: Might remove
-    pService->start();
+    bleService->start();
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(SERVICE_UUID);
     pAdvertising->setScanResponse(true);
@@ -136,8 +136,8 @@ void loop()
 
     delay(2000);
 
-    pNewMessageCharacteristic->setValue("message123");
-    pNewMessageCharacteristic->notify();
+    // newMessageCharacteristic->setValue("message123");
+    // newMessageCharacteristic->notify();
 
     return;
 
@@ -170,8 +170,8 @@ void loop()
 
         String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
 
-        pNewMessageCharacteristic->setValue("message123");
-        pNewMessageCharacteristic->notify();
+        newMessageCharacteristic->setValue("message123");
+        newMessageCharacteristic->notify();
         //SerialBT.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
 
         ledOnUntil = millis() + 100;
