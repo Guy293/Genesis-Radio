@@ -166,7 +166,6 @@ namespace GenesisRadioApp
                 Thread.Sleep(3000);
                 bleScanner.StopScan(callback);
 
-                // TODO: Test that this sort works correctly
                 if (Devices.Count == 0)
                 {
                     Log.Debug(TAG, "No devices found");
