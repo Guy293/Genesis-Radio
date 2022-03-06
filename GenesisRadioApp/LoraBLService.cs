@@ -167,13 +167,13 @@ namespace GenesisRadioApp
                 bleScanner.StopScan(callback);
 
                 // TODO: Test that this sort works correctly
-                Devices.Sort((x, y) => y.Rssi.CompareTo(x.Rssi));
-
                 if (Devices.Count == 0)
                 {
                     Log.Debug(TAG, "No devices found");
                     return;
                 }
+
+                Devices.Sort((x, y) => y.Rssi.CompareTo(x.Rssi));
 
                 BluetoothDevice nearestDevice = Devices[0].Device;
                 int nearestDeviceRssi = Devices[0].Rssi;
