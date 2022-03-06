@@ -289,7 +289,7 @@ namespace GenesisRadioApp
             //intent.PutExtra("message", messageString);
             LocalBroadcastManager.GetInstance(this.m.ApplicationContext).SendBroadcast(intent);
 
-            Log.Debug(TAG, "Received notification from device");
+            Log.Info(TAG, "Message recieved: " + messageString);
         }
     }
 
