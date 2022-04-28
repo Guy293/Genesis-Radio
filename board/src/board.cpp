@@ -67,7 +67,6 @@ struct DATA
     const char *Message;
 };
 
-DATA dataSend;
 unsigned long Last;
 unsigned int ledOnUntil;
 bool ledStatus;
@@ -195,27 +194,18 @@ void loop()
     }
 
 
-    if (mac == DEVICE_1) {
-        // DATA dataSend;
-        // dataSend.Message = "דשגשגדאבג";
-        // Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+    // if (mac == DEVICE_1) {
+    //     DATA dataSend = { "דשגשגדאבג" };
+    //     // dataSend.Message = "דשגשגדאבג";
+    //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
 
-        // SerialDebug.println("sent " + dataSend.Message);
+    //     SerialDebug.println("sent " + String(dataSend.Message));
 
-        // delay(2000);
+    //     delay(2000);
 
-        // return;
+    //     return;
+    // }
 
-        DATA dataSend = { "דשגשגדאבג" };
-        // dataSend.Message = "דשגשגדאבג";
-        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
-
-        SerialDebug.println("sent " + String(dataSend.Message));
-
-        delay(2000);
-
-        return;
-    }
 
     if (Transceiver.available())
     {
@@ -227,27 +217,9 @@ void loop()
 
         SerialDebug.println("Recieved message: " + String(dataRecv.Message));
 
+        newMessageCharacteristic->setValue(dataRecv.Message);
+        newMessageCharacteristic->notify();
 
         ledOnUntil = millis() + 100;
     }
-
-    // if (SerialBT.available()) {
-    //     DATA dataSend;
-    //     dataSend.Message = SerialBT.readString();
-    //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
-    // }
-
-
-
-
-    // else if ((millis() - Last) > 5000)
-    // {
-    //     SerialDebug.println("No response in the last 10 seconds... Sending initial message");
-    //     DATA dataSend;
-    //     dataSend.Message = "hello!";
-    //     dataSend.count = 0;
-    //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
-
-    //     Last = millis();
-    // }
 }
