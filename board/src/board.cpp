@@ -152,12 +152,35 @@ void setup()
     // Last = millis();
 }
 
+void blink_led_loop()
+{
+    if (ledOnUntil >= millis())
+    {
+        if (!ledStatus)
+        {
+            digitalWrite(PIN_LED, HIGH);
+            ledStatus = true;
+        }
+    }
+    else
+    {
+        if (ledStatus)
+        {
+            digitalWrite(PIN_LED, LOW);
+            ledStatus = false;
+        }
+    }
+}
+
 void loop()
 {
     // Serial.println("hola");
     // DATA dataSend;
     // dataSend.Message = "hola";
     // Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+    if (blinkEnabled) {
+        blink_led_loop();
+    }
 
     // delay(2000);
 
@@ -166,23 +189,6 @@ void loop()
 
     // return;
 
-    if (blinkEnabled) {
-        if (ledOnUntil >= millis())
-        {
-            if (!ledStatus)
-            {
-                digitalWrite(PIN_LED, HIGH);
-                ledStatus = true;
-            }
-        }
-        else
-        {
-            if (ledStatus)
-            {
-                digitalWrite(PIN_LED, LOW);
-                ledStatus = false;
-            }
-        }
         // delay(2000);
 
         // return;
