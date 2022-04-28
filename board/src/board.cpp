@@ -53,7 +53,13 @@
 // from both the receiver and sender modules
 struct DATA
 {
-    String Message;
+    // Using char array instead of String because of stupid
+    // unidentifiable bug crashing the microcontroller when
+    // using hebrew ????????????????????????????????????
+    // I don't know and don't care because it works now
+    // don't need to change it anyways as the struct is only for
+    // transferring data.
+    const char *Message;
 };
 
 DATA dataSend;
@@ -82,6 +88,7 @@ class SendMessageCallbacks: public BLECharacteristicCallbacks {
 
         DATA dataSend;
         dataSend.Message = value.c_str();
+        SerialDebug.println("Sending message: " + String(dataSend.Message));
         Transceiver.SendStruct(&dataSend, sizeof(dataSend));
     }
 };
@@ -176,6 +183,19 @@ void loop()
                 ledStatus = false;
             }
         }
+        // delay(2000);
+
+        // return;
+
+        DATA dataSend = { "דשגשגדאבג" };
+        // dataSend.Message = "דשגשגדאבג";
+        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+
+        SerialDebug.println("sent " + String(dataSend.Message));
+
+        delay(2000);
+
+        return;
     }
 
     if (Transceiver.available())
@@ -189,6 +209,7 @@ void loop()
         // String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
         char message[dataRecv.Message.length()];
         dataRecv.Message.toCharArray(message, dataRecv.Message.length()+1);
+        SerialDebug.println("Recieved message: " + String(dataRecv.Message));
 
         newMessageCharacteristic->setValue(message);
         newMessageCharacteristic->notify();
