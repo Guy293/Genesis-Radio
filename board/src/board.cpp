@@ -29,6 +29,7 @@
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
+#include <WiFi.h>
 
 #define SERVICE_UUID "16f88c52-1471-4bba-95a8-17094b0520d3"
 #define NEW_MESSAGE_CHARACTERISTIC_UUID "af77d21b-1a5c-4910-b4b4-c98220ac0e79"
@@ -49,6 +50,10 @@
 
 #define PIN_LED 2
 
+#define DEVICE_1 "4C:EB:D6:7C:02:60"
+#define DEVICE_2 "58:BF:25:80:F7:FC"
+
+
 // i recommend putting this code in a .h file and including it
 // from both the receiver and sender modules
 struct DATA
@@ -66,6 +71,7 @@ DATA dataSend;
 unsigned long Last;
 unsigned int ledOnUntil;
 bool ledStatus;
+String mac;
 
 // create the transceiver object, passing in the serial and pins
 EBYTE Transceiver(&Serial2, PIN_M0, PIN_M1, PIN_AUX);
@@ -98,6 +104,16 @@ void setup()
     Serial.begin(9600);
     delay(500);
     Serial.println();
+
+    mac = WiFi.macAddress();
+
+    if (mac == DEVICE_1) {
+        SerialDebug.println("Device 1");
+    } else if (mac == DEVICE_2) {
+        SerialDebug.println("Device 2");
+    } else {
+        SerialDebug.println("Unknown device");
+    }
 
     SerialDebug.println("Initializing BLE");
     BLEDevice::init(BLE_DEVICE_NAME);
@@ -174,20 +190,17 @@ void blink_led_loop()
 
 void loop()
 {
-    // Serial.println("hola");
-    // DATA dataSend;
-    // dataSend.Message = "hola";
-    // Transceiver.SendStruct(&dataSend, sizeof(dataSend));
     if (blinkEnabled) {
         blink_led_loop();
     }
 
-    // delay(2000);
 
-    // // newMessageCharacteristic->setValue("message123");
-    // // newMessageCharacteristic->notify();
+    if (mac == DEVICE_1) {
+        // DATA dataSend;
+        // dataSend.Message = "דשגשגדאבג";
+        // Transceiver.SendStruct(&dataSend, sizeof(dataSend));
 
-    // return;
+        // SerialDebug.println("sent " + dataSend.Message);
 
         // delay(2000);
 
@@ -212,14 +225,8 @@ void loop()
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
-        // String message = dataRecv.Message + " | RSSI: "+ rssi[0] + "\n";
-        char message[dataRecv.Message.length()];
-        dataRecv.Message.toCharArray(message, dataRecv.Message.length()+1);
         SerialDebug.println("Recieved message: " + String(dataRecv.Message));
 
-        newMessageCharacteristic->setValue(message);
-        newMessageCharacteristic->notify();
-        //SerialBT.printf("%s | RSSI: %d\n", dataRecv.Message, rssi[0]);
 
         ledOnUntil = millis() + 100;
     }
