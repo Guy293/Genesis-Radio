@@ -53,7 +53,6 @@
 #define DEVICE_1 "4C:EB:D6:7C:02:60"
 #define DEVICE_2 "58:BF:25:80:F7:FC"
 
-unsigned long Last;
 unsigned int ledOnUntil;
 bool ledStatus;
 String mac;
@@ -73,6 +72,8 @@ class ServerCallbacks : public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* bleServer) {
         SerialDebug.println("BLE device disconnected");
+        // Start advertising again because the module stops advertising after connection
+        // TODO: Needs allowing more devices to connect concurrently
         bleServer->startAdvertising();
     }
 };
@@ -145,6 +146,7 @@ void setup()
     Transceiver.SetListenBeforeTransmit(0x1);
     // Transceiver.SetChannel(0x0);
     Transceiver.SetChannel(0x3C); // Frequency - 850.125 + channel
+    Transceiver.SetTransmitPower(0x00);
     Transceiver.SaveParameters();
 
     SerialDebug.println("Lora Module Initialized");
@@ -152,7 +154,6 @@ void setup()
     // Transceiver.PrintParameters();
 
     ledOnUntil = 0;
-    // Last = millis();
 }
 
 void blink_led_loop()
@@ -181,15 +182,25 @@ void loop()
         blink_led_loop();
     }
 
-
     // if (mac == DEVICE_1) {
-    //     DATA dataSend = { "דשגשגדאבג" };
-    //     // dataSend.Message = "דשגשגדאבג";
+    //     // DATA dataSend = {a.c_str()};
+    //     DATA dataSend;
+
+    //     dataSend.Message = "abcd";
+    //     dataSend.test = 55;
+
+    //     // dataSend.Message = a.c_str();
+    //     // DATA dataSend = {"aaaa asd a!!  dsaads dssad asd  adkd adjakadsa"};
+    //     // dataSend.Message = "aaaa asd a!!  dsaads dssad asd  adkd adjakadsa";
+
+    //     SerialDebug.print("Size of dataSend: ");
+    //     SerialDebug.println(sizeof(dataSend));
+
+    //     SerialDebug.println("Sending message: " + String(dataSend.Message));
+
     //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
 
-    //     SerialDebug.println("sent " + String(dataSend.Message));
-
-    //     delay(2000);
+    //     delay(4000);
 
     //     return;
     // }
