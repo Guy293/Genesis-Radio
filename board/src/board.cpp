@@ -53,20 +53,6 @@
 #define DEVICE_1 "4C:EB:D6:7C:02:60"
 #define DEVICE_2 "58:BF:25:80:F7:FC"
 
-
-// i recommend putting this code in a .h file and including it
-// from both the receiver and sender modules
-struct DATA
-{
-    // Using char array instead of String because of stupid
-    // unidentifiable bug crashing the microcontroller when
-    // using hebrew ????????????????????????????????????
-    // I don't know and don't care because it works now
-    // don't need to change it anyways as the struct is only for
-    // transferring data.
-    const char *Message;
-};
-
 unsigned long Last;
 unsigned int ledOnUntil;
 bool ledStatus;
@@ -91,10 +77,8 @@ class SendMessageCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string value = pCharacteristic->getValue();
 
-        DATA dataSend;
-        dataSend.Message = value.c_str();
-        SerialDebug.println("Sending message: " + String(dataSend.Message));
-        Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+        SerialDebug.printf("Sending message: %s\n", value.c_str());
+        Serial2.print(value.c_str());
     }
 };
 
@@ -209,15 +193,18 @@ void loop()
 
     if (Transceiver.available())
     {
-        DATA dataRecv;
-        Transceiver.GetStruct(&dataRecv, sizeof(dataRecv));
+        String message = Serial2.readString();
 
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
-        SerialDebug.println("Recieved message: " + String(dataRecv.Message));
+        SerialDebug.printf("Recieved message (RSSI: %n): %s \n", rssi[0], message);
 
-        newMessageCharacteristic->setValue(dataRecv.Message);
+        char message_cArray[message.length()];
+
+        message.toCharArray(message_cArray, message.length());
+
+        newMessageCharacteristic->setValue(message_cArray);
         newMessageCharacteristic->notify();
 
         ledOnUntil = millis() + 100;
