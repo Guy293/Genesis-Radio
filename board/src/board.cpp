@@ -67,6 +67,10 @@ BLECharacteristic *sendMessageCharacteristic;
 
 
 class ServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer* bleServer) {
+        SerialDebug.println("BLE device connected");
+    }
+
     void onDisconnect(BLEServer* bleServer) {
         SerialDebug.println("BLE device disconnected");
         bleServer->startAdvertising();
