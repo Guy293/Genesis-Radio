@@ -18,6 +18,7 @@
  */
 #include "Arduino.h"
 #include "EBYTE.h"
+#include "packet.h"
 
 // #include <WiFi.h>
 // #include <ESPmDNS.h>
@@ -80,10 +81,19 @@ class ServerCallbacks : public BLEServerCallbacks {
 
 class SendMessageCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
-        std::string value = pCharacteristic->getValue();
+        std::string message = pCharacteristic->getValue();
 
-        SerialDebug.printf("Sending message: %s\n", value.c_str());
-        Serial2.print(value.c_str());
+        SerialDebug.printf("Sending message: %s\n", message.c_str());
+
+        address receiver_addr = {0, 0, 0, 0};
+        address sender_addr = {0, 0, 0, 0};
+
+        Packet p(receiver_addr, sender_addr, message.c_str());
+
+        uint8_t buf[p.byte_array_length()];
+        p.to_byte_array(buf);
+
+        Serial2.write(buf, p.byte_array_length());
     }
 };
 
@@ -120,16 +130,18 @@ void setup()
                                         );
     sendMessageCharacteristic->setCallbacks(new SendMessageCallbacks());
 
-    // TODO: Might remove
-    bleService->start();
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(SERVICE_UUID);
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
-    pAdvertising->setMinPreferred(0x12);
-    BLEDevice::startAdvertising();
+    if (mac == DEVICE_2) {
+        // TODO: Might remove
+        bleService->start();
+        BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+        pAdvertising->addServiceUUID(SERVICE_UUID);
+        pAdvertising->setScanResponse(true);
+        pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+        pAdvertising->setMinPreferred(0x12);
+        BLEDevice::startAdvertising();
 
-    SerialDebug.println("BLE Initialized");
+        SerialDebug.println("BLE Initialized");
+    }
 
     pinMode(PIN_LED, OUTPUT);
 
@@ -183,41 +195,47 @@ void loop()
     }
 
     // if (mac == DEVICE_1) {
-    //     // DATA dataSend = {a.c_str()};
-    //     DATA dataSend;
-
-    //     dataSend.Message = "abcd";
-    //     dataSend.test = 55;
+    //     if (SerialDebug.available()) {
+    //         String message = SerialDebug.readString();
+    //         address receiver_addr = {10, 20, 10, 20};
+    //         address sender_addr = {10, 20, 10, 20};
 
     //     // dataSend.Message = a.c_str();
     //     // DATA dataSend = {"aaaa asd a!!  dsaads dssad asd  adkd adjakadsa"};
-    //     // dataSend.Message = "aaaa asd a!!  dsaads dssad asd  adkd adjakadsa";
 
-    //     SerialDebug.print("Size of dataSend: ");
     //     SerialDebug.println(sizeof(dataSend));
 
-    //     SerialDebug.println("Sending message: " + String(dataSend.Message));
+    //         uint8_t buf[p.byte_array_length()];
+    //         p.to_byte_array(buf);
 
-    //     Transceiver.SendStruct(&dataSend, sizeof(dataSend));
+    //         Serial2.write(buf, p.byte_array_length());
 
-    //     delay(4000);
+    //         ledOnUntil = millis() + 50;
 
-    //     return;
+    //         return;
+    //     }
     // }
 
 
     if (Transceiver.available())
     {
-        String message = Serial2.readString();
+        uint8_t buf[408];
+
+        int length = Serial2.readBytesUntil('\0', buf, 408);
+
+        SerialDebug.printf("Length: %d\n", length);
+
+        Packet p(buf, length);
+
+        SerialDebug.printf("%d.%d.%d.%d\n", p.receiver_addr[0], p.receiver_addr[1], p.receiver_addr[2], p.receiver_addr[3]);
+        SerialDebug.printf("%d.%d.%d.%d\n", p.sender_addr[0], p.sender_addr[1], p.sender_addr[2], p.sender_addr[3]);
+        // SerialDebug.println(p.message);
 
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
-        SerialDebug.printf("Recieved message (RSSI: %n): %s \n", rssi[0], message);
 
-        char message_cArray[message.length()];
 
-        message.toCharArray(message_cArray, message.length());
 
         newMessageCharacteristic->setValue(message_cArray);
         newMessageCharacteristic->notify();
