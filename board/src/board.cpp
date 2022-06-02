@@ -199,10 +199,9 @@ void loop()
     //         address receiver_addr = {10, 20, 10, 20};
     //         address sender_addr = {10, 20, 10, 20};
 
-    //     // dataSend.Message = a.c_str();
-    //     // DATA dataSend = {"aaaa asd a!!  dsaads dssad asd  adkd adjakadsa"};
+    //         Packet p(receiver_addr, sender_addr, message);
 
-    //     SerialDebug.println(sizeof(dataSend));
+    //         SerialDebug.printf("Sending message: %s\n", message);
 
     //         uint8_t buf[p.byte_array_length()];
     //         p.to_byte_array(buf);
@@ -214,7 +213,6 @@ void loop()
     //         return;
     //     }
     // }
-
 
     if (Transceiver.available())
     {
@@ -233,8 +231,11 @@ void loop()
         char rssi[1];
         Serial2.readBytes(rssi, 1);
 
+        SerialDebug.printf("Recieved message (RSSI: %d): %s\n", rssi[0], p.message);
 
+        char message_cArray[p.message.length()];
 
+        p.message.toCharArray(message_cArray, p.message.length());
 
         newMessageCharacteristic->setValue(message_cArray);
         newMessageCharacteristic->notify();
