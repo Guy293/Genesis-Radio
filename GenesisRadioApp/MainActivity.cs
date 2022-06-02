@@ -109,8 +109,17 @@ namespace GenesisRadioApp
                 .RegisterReceiver(this.newMessageBroadcastReceiver, new IntentFilter("new-message"));
         }
 
-        public void InsertMessage(Message message) {
-        
+        protected override void OnResume()
+        {
+            base.OnResume();
+
+            // Hide navigation bar when keyboard opens
+            Window.SetSoftInputMode(SoftInput.AdjustPan);
+        }
+
+        public void InsertMessage(Message message)
+        {
+
             database.SaveMessage(message);
 
             UpdateMessageList();
