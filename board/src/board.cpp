@@ -240,6 +240,6 @@ void loop()
         newMessageCharacteristic->setValue(message_cArray);
         newMessageCharacteristic->notify();
 
-        ledOnUntil = millis() + 100;
+        ledOnUntil = millis() + 50;
     }
 }
