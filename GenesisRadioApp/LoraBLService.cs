@@ -45,11 +45,11 @@ namespace GenesisRadioApp
         public Notification.Builder notificationBuilder;
 
         IBinder binder;
-        readonly string bluetoothServiceUUID = "16f88c52-1471-4bba-95a8-17094b0520d3";
-        readonly string newMessageCharacteristicUUID = "af77d21b-1a5c-4910-b4b4-c98220ac0e79";
-        readonly string sendMessageCharacteristicUUID = "8ef6e254-8921-4ef2-9726-368055789ba4";
-        BluetoothGattCharacteristic newMessageCharacteristic;
-        BluetoothGattCharacteristic sendMessageCharacteristic;
+        public readonly string bluetoothServiceUUID = "16f88c52-1471-4bba-95a8-17094b0520d3";
+        public readonly string newMessageCharacteristicUUID = "af77d21b-1a5c-4910-b4b4-c98220ac0e79";
+        public readonly string sendMessageCharacteristicUUID = "8ef6e254-8921-4ef2-9726-368055789ba4";
+        public BluetoothGattCharacteristic newMessageCharacteristic;
+        public BluetoothGattCharacteristic sendMessageCharacteristic;
         public List<(BluetoothDevice Device, int Rssi)> Devices;
         BluetoothManager bluetoothManager;
         BluetoothAdapter bluetoothAdapter;
