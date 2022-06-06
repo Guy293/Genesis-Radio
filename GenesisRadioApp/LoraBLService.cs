@@ -92,7 +92,7 @@ namespace GenesisRadioApp
 
             Devices = new List<(BluetoothDevice Device, int Rssi)>();
 
-            bluetoothManager = (BluetoothManager)Application.Context.GetSystemService(BluetoothService);
+            bluetoothManager = (BluetoothManager)ApplicationContext.GetSystemService(BluetoothService);
             bluetoothAdapter = bluetoothManager.Adapter;
 
             if (bluetoothAdapter.BluetoothLeScanner == null)
