@@ -276,12 +276,17 @@ namespace GenesisRadioApp
         public override void OnCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
         {
             base.OnCharacteristicChanged(gatt, characteristic);
+            gatt.ReadCharacteristic(characteristic);
+        }
+
+        public override void OnCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, [GeneratedEnum] GattStatus status)
+        {
+            base.OnCharacteristicRead(gatt, characteristic, status);
 
             string messageString = characteristic.GetStringValue(0);
 
             Message message = new Message(messageString, false);
             m.database.SaveMessage(message);
-
 
             // Send broadcast to main activity
             // TODO: Use a proper action name (com...)
