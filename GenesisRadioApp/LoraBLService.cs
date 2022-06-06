@@ -184,16 +184,6 @@ namespace GenesisRadioApp
                 while (bluetoothGatt == null) { }
 
                 bluetoothGatt.DiscoverServices();
-
-
-                while (bluetoothGatt.Services.Count == 0) { }
-
-                BluetoothGattService bluetoothGattService = bluetoothGatt.GetService(UUID.FromString(bluetoothServiceUUID));
-
-                newMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(newMessageCharacteristicUUID));
-                bluetoothGatt.SetCharacteristicNotification(newMessageCharacteristic, true);
-
-                sendMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(sendMessageCharacteristicUUID));
             }
         }
 
@@ -246,6 +236,18 @@ namespace GenesisRadioApp
         public LeGattCallback(LoraBLService m)
         {
             this.m = m;
+        }
+
+        public override void OnServicesDiscovered(BluetoothGatt gatt, [GeneratedEnum] GattStatus status)
+        {
+            base.OnServicesDiscovered(gatt, status);
+
+            BluetoothGattService bluetoothGattService = m.bluetoothGatt.GetService(UUID.FromString(m.bluetoothServiceUUID));
+
+            m.newMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(m.newMessageCharacteristicUUID));
+            m.bluetoothGatt.SetCharacteristicNotification(m.newMessageCharacteristic, true);
+
+            m.sendMessageCharacteristic = bluetoothGattService.GetCharacteristic(UUID.FromString(m.sendMessageCharacteristicUUID));
         }
 
         public override void OnConnectionStateChange(BluetoothGatt gatt, [GeneratedEnum] GattStatus status, [GeneratedEnum] ProfileState newState)
