@@ -136,14 +136,6 @@ namespace GenesisRadioApp
         {
             if (this.device == null)
             {
-                if (CheckSelfPermission(Manifest.Permission.BluetoothScan) == Permission.Denied ||
-                    CheckSelfPermission(Manifest.Permission.BluetoothConnect) == Permission.Denied ||
-                    CheckSelfPermission(Manifest.Permission.AccessFineLocation) == Permission.Denied ||
-                    CheckSelfPermission(Manifest.Permission.AccessBackgroundLocation) == Permission.Denied)
-                {
-                    return;
-                }
-
                 Devices.Clear();
 
                 // TODO: Test which scan mode to use

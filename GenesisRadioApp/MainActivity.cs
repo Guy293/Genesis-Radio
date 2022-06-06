@@ -59,15 +59,18 @@ namespace GenesisRadioApp
             // Asks all the permissions needed, good enough for now
             // TODO: Make sure the user actually accpets the permissions
             // https://stackoverflow.com/questions/46070814/how-to-nag-ask-user-to-enable-permission-until-user-gives-it/46071096
-            if (CheckSelfPermission(Manifest.Permission.BluetoothScan) == Permission.Denied ||
-                CheckSelfPermission(Manifest.Permission.BluetoothConnect) == Permission.Denied ||
-                CheckSelfPermission(Manifest.Permission.AccessFineLocation) == Permission.Denied ||
-                CheckSelfPermission(Manifest.Permission.AccessBackgroundLocation) == Permission.Denied)
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.S)               
             {
                 RequestPermissions(new string[] {
                     Manifest.Permission.BluetoothScan,
                     Manifest.Permission.BluetoothConnect
                 }, BLUETOOTH_PERMISSION_REQUEST);
+            }
+            else
+            {
+                RequestPermissions(new string[] {
+                    Manifest.Permission.AccessFineLocation
+                }, FINE_LOCATION_PERMISSION_REQUEST);
             }
 
 
@@ -157,7 +160,7 @@ namespace GenesisRadioApp
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             if (requestCode == BLUETOOTH_PERMISSION_REQUEST)
@@ -167,17 +170,20 @@ namespace GenesisRadioApp
 
             if (requestCode == FINE_LOCATION_PERMISSION_REQUEST)
             {
-                new Android.App.AlertDialog.Builder(this)
-                    .SetTitle("Background Location Permission Needed")
-                    .SetMessage("Please Set Location Permission To Allow All The Time")
-                    .SetPositiveButton(
-                        "OK",
-                        (senderAlert, args) =>
-                        {
-                            RequestPermissions(new string[] { Manifest.Permission.AccessBackgroundLocation }, BACKGROUND_LOCATION_PERMISSION_REQUEST);
-                        })
-                    .Create()
-                    .Show();
+                if (ContextCompat.CheckSelfPermission(ApplicationContext, Manifest.Permission.AccessBackgroundLocation) == Permission.Denied)
+                {
+                    new Android.App.AlertDialog.Builder(this)
+                        .SetTitle("Background Location Permission Needed")
+                        .SetMessage("Please Set Location Permission To Allow All The Time")
+                        .SetPositiveButton(
+                            "OK",
+                            (senderAlert, args) =>
+                            {
+                                RequestPermissions(new string[] { Manifest.Permission.AccessBackgroundLocation }, BACKGROUND_LOCATION_PERMISSION_REQUEST);
+                            })
+                        .Create()
+                        .Show();
+                }
             }
         }
 	    
