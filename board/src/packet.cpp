@@ -4,6 +4,7 @@
 #include <iterator>
 #include <array>
 #include "packet.h"
+#include "esp_now.h"
 
 using namespace std;
 
@@ -18,6 +19,9 @@ String message;
 Packet::Packet(uint8_t receiver_addr[], uint8_t sender_addr[], String message) {
     memcpy(this->receiver_addr, receiver_addr, sizeof(4));
     memcpy(this->sender_addr, sender_addr, sizeof(4));
+    if (message.length() > ESP_NOW_MAX_DATA_LEN-9) {
+        message = message.substring(0, ESP_NOW_MAX_DATA_LEN-9);
+    }
     this->message = message;
 
     // std::copy(receiver_addr, receiver_addr + 4, this->receiver_addr);
@@ -25,6 +29,8 @@ Packet::Packet(uint8_t receiver_addr[], uint8_t sender_addr[], String message) {
     // this->message = message;
 };
 
+// Packet::Packet(uint8_t data[], int length) {
+// Packet::Packet(uint8_t data[], int length, int a) {
 Packet::Packet(uint8_t data[], int length) {
     int index = 0;
 
@@ -38,23 +44,15 @@ Packet::Packet(uint8_t data[], int length) {
         sender_addr[i] = data[index++];
     }
 
-    // SerialDebug.printf("Length: %d\n", length);
-    // SerialDebug.printf("Index: %d\n", index);
-    // SerialDebug.printf("Length - (index-1): %d\n", length - (index-1));
-
     // rest of the data to message
-    // for (int i = 0; i < length-(index-1); i++){
     for (int i = 0; i < length-8; i++){
-        // SerialDebug.printf("i: %d  %c %x\n", i, data[index], data[index]);
-        // SerialDebug.printf("%s\n", message);
         if (data[index] == '\0') {
-            // SerialDebug.printf("BREAK\n");
             break;
         }
-        message += (char)data[index++];
+        message.concat((char)data[index++]);
     }
 
-    if (index-1 > 408) {
+    if (index-1 > ESP_NOW_MAX_DATA_LEN) {
         throw runtime_error("Size of data is too large");
     }
 }
